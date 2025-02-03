@@ -1,0 +1,88 @@
+// @ts-check
+const { test, expect } = require('@playwright/test');
+
+test.describe("main test", () => {
+
+  test("midterm", async ({page}) => {
+
+    await page.goto('file:///C:/Users/nafiz/Downloads/quiz_4.html');
+    
+    //question 1
+    
+    const second_option = await page.locator('div.form-group:first-of-type > div > div:nth-child(2) > input')
+    await second_option.click()
+    
+    
+    const digits = await page.locator('//form[@id="quizForm"]//div[@class="form-group" and position()=1]//div//div[1]//input')
+    await digits.click()
+
+    await page.waitForTimeout(3000)
+
+
+    //question 2
+    const containsMay = await page.locator('//form[@id="quizForm"]//div[@class="form-group" and position()=2]//div//div//label[contains(text(), "May")]')
+    await containsMay.hover()
+    page.waitForTimeout(1000)
+
+    const lastOption = await page.locator('form > div.form-group:nth-of-type(2) > div > div:last-child')
+    await lastOption.hover()
+    page.waitForTimeout(1000)
+
+    for(let i = 1; i <= 4; i++){
+      const option = await page.locator(`form > div.form-group:nth-of-type(2) > div > div:nth-child(${i}) > input`)
+      await option.click()
+    }
+
+    //calendar
+    const calendarContainer = await page.locator('//div[@id="calendar-container"]')
+    await calendarContainer.click()
+
+    const nextButton = await page.locator('//a[@data-handler="next"]')
+    await nextButton.click()
+    await nextButton.click()
+    await nextButton.click()
+
+    const first_of_january = await page.locator('//td[4]//a[text() ="1"]')
+    await first_of_january.click()
+    await page.waitForTimeout(1000)
+
+
+    //sortable list
+    let breaking_bad = await page.locator('ul[id="sortable"] > li:nth-child(3)')
+    let lord_of_the_rings = await page.locator('//ul[@id="sortable"]//li[1]')
+    let marvel = await page.locator('text="Marvel"');
+    let bad = await page.locator('//ul[@id="sortable"]//li[7]')
+
+    await breaking_bad.dragTo(lord_of_the_rings)
+    lord_of_the_rings = await page.locator('//ul[@id="sortable"]//li[2]')
+    breaking_bad = await page.locator('ul[id="sortable"] > li:nth-child(1)')
+    await lord_of_the_rings.dragTo(breaking_bad)
+    await marvel.dragTo(bad)
+    
+
+    //grid
+    //mark first three
+    for(let i = 1; i <= 3; i++){
+      const cell = await page.locator(`div[class="form-group"]:nth-of-type(5) > div > div:nth-child(${i})`)
+      await cell.click()
+    }
+
+    //unmark first three
+    for(let i = 1; i <= 3; i++){
+      const cell = await page.locator(`div[class="form-group"]:nth-of-type(5) > div > div:nth-child(${i})`)
+      await cell.click()
+    }
+
+    //mark all cells with odd index to make X
+    for(let i = 1; i <= 9; i++){
+      if (i % 2 == 1){
+        const cell = await page.locator(`div[class="form-group"]:nth-of-type(5) > div > div:nth-child(${i})`)
+        await cell.click()
+      }
+     
+    }
+
+
+  })
+
+})
