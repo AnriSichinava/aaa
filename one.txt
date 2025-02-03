@@ -1,0 +1,193 @@
+import { Page } from '@playwright/test';
+
+export class EmployeeManagementPage {
+  page: Page;
+
+  constructor(page: Page) {
+    this.page = page; 
+  }
+
+  //locators
+  private pimMenuItem() {
+    return this.page.locator('.oxd-main-menu-item--name', { hasText: 'PIM' });
+  }
+
+  private addEmployeeButton() {
+    return this.page.locator('button[type="button"]', { hasText: 'Add' });
+  }
+
+  private firstNameInput() {
+    return this.page.locator('input[name="firstName"]');
+  }
+
+  private lastNameInput() {
+    return this.page.locator('input[name="lastName"]');
+  }
+
+  private employeeImageAction() {
+    return this.page.locator('.employee-image-action');
+  }
+
+  private fileInput() {
+    return this.page.locator('input[type="file"]');
+  }
+
+  private saveButton() {
+    return this.page.locator('button:has-text("Save")');
+  }
+
+  //method to add an employee
+  async addNewEmployee(firstName: string, lastName: string, imagePath: string) {
+    await this.pimMenuItem().click();
+    await this.addEmployeeButton().click();
+    await this.firstNameInput().fill(firstName);
+    await this.lastNameInput().fill(lastName);
+    await this.employeeImageAction().click();
+    await this.fileInput().setInputFiles(imagePath);
+    await this.saveButton().click();
+  }
+
+  //method to search and verfy employee
+  async searchAndVerifyEmployee(employeeName: string) {
+    await this.page.locator('input[placeholder="Type for hints..."]').first().fill(employeeName);
+    await this.page.locator('button', { hasText: 'Search' }).click();
+    const row = await this.page.locator('.oxd-table-cell.oxd-padding-cell:nth-child(3)');
+    await row.locator(`div:has-text("${employeeName}")`).click();
+  }
+}
+
+import { Page, expect } from '@playwright/test';
+
+export class LoginPage {
+  private page: Page;
+
+  constructor(page: Page) {
+    this.page = page; 
+  }
+
+  //locators
+  private get usernameInput() {
+    return this.page.locator('input[name="username"]');
+  }
+
+  private get passwordInput() {
+    return this.page.locator('input[name="password"]');
+  }
+
+  private get submitButton() {
+    return this.page.locator('button[type="submit"]');
+  }
+
+  private get errorMessage() {
+    return this.page.locator('p.oxd-alert-content-text');
+  }
+
+  private get profilePic() {
+    return this.page.locator('img.oxd-userdropdown-img');
+  }
+
+  private get mainMenu() {
+    return this.page.locator('.oxd-sidepanel-body');
+  }
+
+  //login
+  async login(username: string, password: string) {
+    await this.page.goto('https://opensource-demo.orangehrmlive.com/');
+    await this.usernameInput.fill(username);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
+  }
+
+  //verify successful login
+  async verifySuccessfulLogin() {
+    await expect(this.profilePic).toBeVisible();
+    await expect(this.mainMenu).toBeVisible();
+  }
+
+  //verify error when failing to log in
+  async verifyErrorMessage() {
+    await expect(this.errorMessage).toHaveText('Invalid credentials');
+  }
+}
+
+import { test } from '../fixtures/base.setup';  
+import { login } from '../utils/test-helpers'; 
+import { expect } from '@playwright/test';
+
+test.describe('Employee Management Tests', () => {
+
+  // add new employee
+  test('add new employee with complete details', async ({ page }) => {
+    //login
+    await login(page);
+
+    //go to PIM
+    await page.locator('.oxd-main-menu-item--name', { hasText: 'PIM' }).click(); 
+    await page.locator('button[type="button"]', { hasText: 'Add' }).click(); 
+
+    //fill
+    await page.fill('input[name="firstName"]', 'Gela');
+    await page.fill('input[name="middleName"]', '');
+    await page.fill('input[name="lastName"]', 'Barkalaia');
+    await page.locator('.oxd-label', { hasText: 'Employee Id' });
+
+    //upload photo
+    await page.locator('.employee-image-action').click();
+
+  
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('C:/Users/Luka/Desktop/plwrght/photo/gela.jpg'); 
+
+    await page.locator('.oxd-button--secondary.orangehrm-left-space').click();
+  });
+
+  //search test
+  test('search and verify created employee', async ({ page }) => {
+    
+    await login(page);
+
+    //PIM
+    await page.locator('.oxd-main-menu-item--name', { hasText: 'PIM' }).click();
+
+    //search filters
+    await page.locator('input[placeholder="Type for hints..."]').first().fill('Gela');
+    await page.locator('button', { hasText: 'Search' }).click();
+
+    const row = await page.locator('.oxd-table-cell.oxd-padding-cell:nth-child(3)');
+    const divWithText = await row.locator('div:has-text("Gela")');
+    
+  });
+
+});
+
+
+
+
+
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/loginPage';  
+
+test.describe('Login Tests', () => {
+
+  test('successful login with valid credentials', async ({ page }) => {
+    const loginPage = new LoginPage(page);  
+
+    //valid login
+    await loginPage.login('Admin', 'admin123');
+
+    //verify
+    await loginPage.verifySuccessfulLogin();
+  });
+
+  test('unsuccessful login with invalid credentials', async ({ page }) => {
+    const loginPage = new LoginPage(page);  
+
+    //invalid
+    await loginPage.login('invalidUser', 'invalidPassword');
+
+    //verify
+    await loginPage.verifyErrorMessage();
+  });
+
+});
+
